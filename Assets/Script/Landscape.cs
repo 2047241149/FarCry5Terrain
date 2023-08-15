@@ -17,9 +17,11 @@ public class Landscape : MonoBehaviour
     
     public Texture2D heightMap;
     public float size = 1.0f;
+    public float heightScale = 1.0f;
     public int widthResolution = 1024;
     public int heightResolution = 1024;
     public Material material;
+    
     
     
     // Start is called before the first frame update
@@ -114,7 +116,8 @@ public class Landscape : MonoBehaviour
         mesh.RecalculateBounds();
         meshFilter.mesh = mesh;
         meshRender.material = material;
-        meshRender.material.SetTexture("HeightMap", heightMap);
+        meshRender.material.SetTexture("_HeightTex", heightMap);
+        meshRender.material.SetFloat("_HeightScale", heightScale);
     }
 
     // Update is called once per frame

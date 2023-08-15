@@ -374,9 +374,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   heightMap: {fileID: 2800000, guid: 6ff9522cf5eeb1946842a032fab8b59d, type: 3}
-  size: 1
-  widthResolution: 64
-  heightResolution: 64
+  size: 0.5
+  heightScale: 5
+  widthResolution: 128
+  heightResolution: 128
   material: {fileID: 2100000, guid: 55bab0dcb1259a5448c8db024b0f3dbc, type: 2}
 --- !u!23 &1230153979
 MeshRenderer:

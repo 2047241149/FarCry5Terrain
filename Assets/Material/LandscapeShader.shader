@@ -40,8 +40,7 @@ Shader "Landscape/RenderLandscape"
             {
                 v2f o;
                 float heightSampleValue = tex2Dlod(_HeightTex, float4(v.uv, 0, 0)).r;
-                float height = (heightSampleValue * 65535.0f - 32768.0) * _HeightScale;
-                height = 0;
+                float height = heightSampleValue * _HeightScale;
                 float4 landscapeVertex = float4(v.vertex.x, height, v.vertex.z, 1.0f);
                 o.vertex = UnityObjectToClipPos(landscapeVertex);
                 o.uv = v.uv;
