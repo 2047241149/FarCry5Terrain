@@ -84,33 +84,64 @@ public class Landscape : MonoBehaviour
         {
             for (int x = 0; x < realWidthResolution; x++)
             {
-         
-                //LeftUp triangle
-                int index1 = x + y * (realWidthResolution + 1);
-                indices[index] = index1;
-                index++;
+
+                if ((y % 2  + x % 2) == 1)
+                {
+                    //LeftUp triangle(00-01-10)
+                    int index1 = x + y * (realWidthResolution + 1);
+                    indices[index] = index1;
+                    index++;
                 
-                int index2 = x + (y + 1) * (realWidthResolution + 1);
-                indices[index] = index2;
-                index++;
+                    int index2 = x + (y + 1) * (realWidthResolution + 1);
+                    indices[index] = index2;
+                    index++;
                 
-                int index3 = x + 1 + y * (realWidthResolution + 1);
-                indices[index] = index3;
-                index++;
+                    int index3 = x + 1 + y * (realWidthResolution + 1);
+                    indices[index] = index3;
+                    index++;
                 
-                //LeftUp triangle
-                int index4 = x + 1 + y * (realWidthResolution + 1);
-                indices[index] = index4;
-                index++;
+                    //RightDown triangle(10-01-11)
+                    int index4 = x + 1 + y * (realWidthResolution + 1);
+                    indices[index] = index4;
+                    index++;
                 
-                int index5 = x + (y + 1) * (realWidthResolution + 1);
-                indices[index] = index5;
-                index++;
+                    int index5 = x + (y + 1) * (realWidthResolution + 1);
+                    indices[index] = index5;
+                    index++;
                 
-                int index6 = x + 1 + (y + 1) * (realWidthResolution + 1);
-                indices[index] = index6;
-                index++;
-            
+                    int index6 = x + 1 + (y + 1) * (realWidthResolution + 1);
+                    indices[index] = index6;
+                    index++;
+                }
+                else
+                {
+                    //LeftDown triangle(00-01-11)
+                    int index1 = x + y * (realWidthResolution + 1);
+                    indices[index] = index1;
+                    index++;
+                
+                    int index2 = x + (y + 1) * (realWidthResolution + 1);
+                    indices[index] = index2;
+                    index++;
+                
+                    int index3 = x + 1 + (y + 1) * (realWidthResolution + 1);
+                    indices[index] = index3;
+                    index++;
+                
+                    //RightDown triangle(00-11-10)
+                    int index4 = x + y * (realWidthResolution + 1);
+                    indices[index] = index4;
+                    index++;
+                
+                    int index5 = x + 1 + (y + 1) * (realWidthResolution + 1);
+                    indices[index] = index5;
+                    index++;
+                
+                    int index6 = x + 1 + y  * (realWidthResolution + 1);
+                    indices[index] = index6;
+                    index++;
+                }
+                
             }
         }
         

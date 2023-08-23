@@ -151,7 +151,7 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
@@ -375,9 +375,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   heightMap: {fileID: 2800000, guid: 6ff9522cf5eeb1946842a032fab8b59d, type: 3}
   cellSize: 1
-  heightScale: 10
-  widthResolution: 512
-  heightResolution: 512
+  heightScale: 0
+  widthResolution: 4
+  heightResolution: 4
   bPureWhite: 0
   material: {fileID: 2100000, guid: 55bab0dcb1259a5448c8db024b0f3dbc, type: 2}
 --- !u!23 &1230153979
