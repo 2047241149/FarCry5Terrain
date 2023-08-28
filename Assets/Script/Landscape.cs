@@ -1,158 +1,93 @@
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Unity.Mathematics;
-using UnityEditor.SceneManagement;
+using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Rendering;
+
+
 
 public class Landscape : MonoBehaviour
 {
-
-    private Mesh mesh;
-    private MeshFilter meshFilter;
-    private MeshRenderer meshRenderer;
+    
     private int halfWidthResolution;
     private int halfHeightResolution;
-    private int realWidthResolution;
+    [DoNotSerialize, VisibleOnly]
+    public int realWidthResolution;
     private int realHeightResolution;
-    private MeshRenderer meshRender;
-    
+    private GameObject landscapeComponentPrefab;
+    private Dictionary<IntPoint, GameObject> landscomponents;
+    private Vector3[] vertices = null;
+    private Vector2[] uvs = null;
+        
     public Texture2D heightMap;
+    
+    public int LandscapeComponentNumX = 1;
+    public int LandscapeComponentNumZ = 1;
+    
+    [VisibleOnly]
+    public int sectionSize = 128;
     public float cellSize = 1.0f;
     public float heightScale = 1.0f;
-    public int widthResolution = 1024;
-    public int heightResolution = 1024;
     public bool bPureWhite = false;
-    public Material material;
-    private Texture2D calHeightMap;
+
+    [DoNotSerialize, VisibleOnly]
+    public Texture2D calHeightMap;
     
     // Start is called before the first frame update
     void Start()
     {
-        Mesh mesh = new Mesh();
-        if (!mesh)
+        landscomponents = new Dictionary<IntPoint, GameObject>();
+        landscapeComponentPrefab = (GameObject)Resources.Load("Prefabs/LandscapeComponent");
+        if (!landscapeComponentPrefab)
         {
+            Debug.LogError("landscapeComponentPrefab is null");
             return;
         }
-
-        MeshFilter meshFilter = GetComponent<MeshFilter>();
-        if (!meshFilter)
-        {
-            return;
-        }
-
-        meshRender = GetComponent<MeshRenderer>();
-        if (!meshRender)
-        {
-            return;
-        }
-
+        
         RecalculateHeightsAndNormals();
-        halfWidthResolution = widthResolution / 2;
-        halfHeightResolution = heightResolution / 2;
-        realWidthResolution = halfWidthResolution * 2;
-        realHeightResolution = halfHeightResolution * 2;
-
+        realWidthResolution = (sectionSize + 1) * LandscapeComponentNumX - LandscapeComponentNumX + 1;
+        realHeightResolution = (sectionSize + 1) * LandscapeComponentNumZ - LandscapeComponentNumZ + 1;
+        halfWidthResolution = realWidthResolution / 2;
+        halfHeightResolution = realHeightResolution / 2;
+        
         //Seutp vertices and uvs
-        Vector3[] vertices = new Vector3[(realWidthResolution + 1) * (realHeightResolution + 1)];
-        Vector2[] uvs = new Vector2[(realWidthResolution + 1) * (realHeightResolution + 1)];
+        vertices = new Vector3[realWidthResolution * realHeightResolution];
+        uvs = new Vector2[realWidthResolution * realHeightResolution];
         int index = 0;
         for (int y = -halfHeightResolution; y <= halfHeightResolution; y++)
         {
             for (int x = -halfWidthResolution; x <= halfWidthResolution; x++)
             {
                 vertices[index] = new Vector3(x * cellSize, 0, y * cellSize);
-                uvs[index] = new Vector2((float)(x + halfWidthResolution) / (float)realWidthResolution,
-                    (float)(y + halfHeightResolution) / (float)realHeightResolution);
+                uvs[index] = new Vector2((float)(x + halfWidthResolution) / (float)(realWidthResolution - 1),
+                    (float)(y + halfHeightResolution) / (float)(realWidthResolution - 1));
+                
                 index++;
             }
         }
         
-        
-        mesh.vertices = vertices;
-        mesh.uv = uvs;
-        
-        // for UInt16, max index is 65535, if more than use UInt32
-        mesh.indexFormat = IndexFormat.UInt32;
-        
-        //calculate index
-        int triangleNum = realWidthResolution *  realHeightResolution * 2;
-        int[] indices = new int[triangleNum * 3];
-        index = 0;
-        for ( int y = 0; y < realHeightResolution; y++)
+        for (int x = 0; x < LandscapeComponentNumX; x++)
         {
-            for (int x = 0; x < realWidthResolution; x++)
+            for (int y = 0; y < LandscapeComponentNumZ; y++)
             {
-
-                if ((y % 2  + x % 2) == 1)
+                GameObject landscapeComponentObject =  Instantiate<GameObject>(landscapeComponentPrefab, transform.position, transform.rotation);
+                if (landscapeComponentObject)
                 {
-                    //LeftUp triangle(00-01-10)
-                    int index1 = x + y * (realWidthResolution + 1);
-                    indices[index] = index1;
-                    index++;
-                
-                    int index2 = x + (y + 1) * (realWidthResolution + 1);
-                    indices[index] = index2;
-                    index++;
-                
-                    int index3 = x + 1 + y * (realWidthResolution + 1);
-                    indices[index] = index3;
-                    index++;
-                
-                    //RightDown triangle(10-01-11)
-                    int index4 = x + 1 + y * (realWidthResolution + 1);
-                    indices[index] = index4;
-                    index++;
-                
-                    int index5 = x + (y + 1) * (realWidthResolution + 1);
-                    indices[index] = index5;
-                    index++;
-                
-                    int index6 = x + 1 + (y + 1) * (realWidthResolution + 1);
-                    indices[index] = index6;
-                    index++;
+                    landscapeComponentObject.transform.SetParent(transform);
+                    IntPoint componentKey = new IntPoint(x, y);
+                    if (!landscomponents.ContainsKey(componentKey))
+                    {
+                        landscomponents.Add(componentKey, landscapeComponentObject);
+                        LandscapeComponent landscapeComponent =
+                            landscapeComponentObject.GetComponent<LandscapeComponent>();
+                        if (landscapeComponent)
+                        {
+                            landscapeComponent.Init(this, componentKey, sectionSize, vertices, uvs);
+                        }
+                    }
                 }
-                else
-                {
-                    //LeftDown triangle(00-01-11)
-                    int index1 = x + y * (realWidthResolution + 1);
-                    indices[index] = index1;
-                    index++;
-                
-                    int index2 = x + (y + 1) * (realWidthResolution + 1);
-                    indices[index] = index2;
-                    index++;
-                
-                    int index3 = x + 1 + (y + 1) * (realWidthResolution + 1);
-                    indices[index] = index3;
-                    index++;
-                
-                    //RightDown triangle(00-11-10)
-                    int index4 = x + y * (realWidthResolution + 1);
-                    indices[index] = index4;
-                    index++;
-                
-                    int index5 = x + 1 + (y + 1) * (realWidthResolution + 1);
-                    indices[index] = index5;
-                    index++;
-                
-                    int index6 = x + 1 + y  * (realWidthResolution + 1);
-                    indices[index] = index6;
-                    index++;
-                }
-                
             }
         }
         
-        mesh.SetIndices(indices.ToList(), MeshTopology.Triangles, 0);
-        mesh.RecalculateNormals();
-        mesh.RecalculateTangents();
-        mesh.RecalculateBounds();
-        meshFilter.mesh = mesh;
-        meshRender.material = material;
-        meshRender.material.SetTexture("_HeightTex", calHeightMap);
-        meshRender.material.SetFloat("_HeightScale", heightScale);
     }
     
 
@@ -212,14 +147,5 @@ public class Landscape : MonoBehaviour
         
         calHeightMap.SetPixels(heightData, 0);
         calHeightMap.Apply();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        if (meshRender)
-        {
-            meshRender.material.SetInt("_bPureWhite", bPureWhite ? 1 : 0);
-        }
     }
 }
