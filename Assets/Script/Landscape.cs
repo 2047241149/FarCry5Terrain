@@ -10,13 +10,20 @@ public class Landscape : MonoBehaviour
     
     private int halfWidthResolution;
     private int halfHeightResolution;
-    [DoNotSerialize, VisibleOnly]
+    
+    [VisibleOnly]
     public int realWidthResolution;
-    private int realHeightResolution;
+    
+    [VisibleOnly]
+    public int realHeightResolution;
+
+    public int sectionResolution;
+    
     private GameObject landscapeComponentPrefab;
     private Dictionary<IntPoint, GameObject> landscomponents;
-    private Vector3[] vertices = null;
-    private Vector2[] uvs = null;
+    private Vector3[] sectionVertices = null;
+    private int[] sectionIndices = null;
+    //private Vector2[] uvs = null;
         
     public Texture2D heightMap;
     
@@ -49,21 +56,99 @@ public class Landscape : MonoBehaviour
         halfWidthResolution = realWidthResolution / 2;
         halfHeightResolution = realHeightResolution / 2;
         
-        //Seutp vertices and uvs
-        vertices = new Vector3[realWidthResolution * realHeightResolution];
-        uvs = new Vector2[realWidthResolution * realHeightResolution];
+        //Seutp vertices and indices
+        sectionResolution = sectionSize + 1;
+        sectionVertices = new Vector3[sectionResolution * sectionResolution];
+
         int index = 0;
-        for (int y = -halfHeightResolution; y <= halfHeightResolution; y++)
+        for (int y = 0; y <= sectionSize; y++)
         {
-            for (int x = -halfWidthResolution; x <= halfWidthResolution; x++)
+            for (int x = 0; x <= sectionSize; x++)
             {
-                vertices[index] = new Vector3(x * cellSize, 0, y * cellSize);
-                uvs[index] = new Vector2((float)(x + halfWidthResolution) / (float)(realWidthResolution - 1),
-                    (float)(y + halfHeightResolution) / (float)(realWidthResolution - 1));
-                
+                sectionVertices[index] = new Vector3(x * cellSize, 0, y * cellSize);
                 index++;
             }
         }
+        
+        int sectionTriangleNum = sectionSize * sectionSize * 2;
+        sectionIndices = new int[sectionTriangleNum * 3];
+        index = 0;
+
+        for (int y = 0; y < sectionSize; y++)
+        {
+            for (int x = 0; x < sectionSize; x++)
+            {
+                int vertexX = x;
+                int vertexY = y;
+                
+                if ((vertexY % 2  + vertexX % 2) == 1)
+                {
+                    //LeftUp triangle(00-01-10)
+                    int index1 = vertexX + vertexY * sectionResolution;
+                    sectionIndices[index] = index1;
+                    index++;
+                
+                    int index2 = vertexX + (vertexY + 1) * sectionResolution;
+                    sectionIndices[index] = index2;
+                    index++;
+                
+                    int index3 = vertexX + 1 + vertexY * sectionResolution;
+                    sectionIndices[index] = index3;
+                    index++;
+                
+                    //RightDown triangle(10-01-11)
+                    int index4 = vertexX + 1 + vertexY * sectionResolution;
+                    sectionIndices[index] = index4;
+                    index++;
+                
+                    int index5 = vertexX + (vertexY + 1) * sectionResolution;
+                    sectionIndices[index] = index5;
+                    index++;
+                
+                    int index6 = vertexX + 1 + (vertexY + 1) * sectionResolution;
+                    sectionIndices[index] = index6;
+                    index++;
+                }
+                else
+                {
+                    //LeftDown triangle(00-01-11)
+                    int index1 = vertexX + vertexY * sectionResolution;
+                    sectionIndices[index] = index1;
+                    index++;
+                
+                    int index2 = vertexX + (vertexY + 1) * sectionResolution;
+                    sectionIndices[index] = index2;
+                    index++;
+                
+                    int index3 = vertexX + 1 + (vertexY + 1) * sectionResolution;
+                    sectionIndices[index] = index3;
+                    index++;
+                
+                    //RightDown triangle(00-11-10)
+                    int index4 = vertexX + vertexY * sectionResolution;
+                    sectionIndices[index] = index4;
+                    index++;
+                
+                    int index5 = vertexX + 1 + (vertexY + 1) * sectionResolution;
+                    sectionIndices[index] = index5;
+                    index++;
+                
+                    int index6 = vertexX + 1 + vertexY  * sectionResolution;
+                    sectionIndices[index] = index6;
+                    index++;
+                }
+            }
+        }
+        
+        
+        //Create landcomponents and calculate component position offset
+        int sectionNumX = LandscapeComponentNumX * sectionSize;
+        int sectionNumZ = LandscapeComponentNumZ * sectionSize;
+        float sectionXLength = sectionNumX * cellSize;
+        float sectionZLength = sectionNumZ * cellSize;
+        float leftCornerX = -sectionXLength / 2.0f;
+        float leftCornerZ = -sectionZLength / 2.0f;
+        float perComponentOffset = sectionSize * cellSize;
         
         for (int x = 0; x < LandscapeComponentNumX; x++)
         {
@@ -81,7 +166,12 @@ public class Landscape : MonoBehaviour
                             landscapeComponentObject.GetComponent<LandscapeComponent>();
                         if (landscapeComponent)
                         {
-                            landscapeComponent.Init(this, componentKey, sectionSize, vertices, uvs);
+                            landscapeComponentObject.transform.localPosition =
+                                new Vector3(leftCornerX + perComponentOffset * x,
+                                    0,
+                                    leftCornerZ + perComponentOffset * y);
+                            
+                            landscapeComponent.Init(this, componentKey, sectionSize, sectionVertices, sectionIndices);
                         }
                     }
                 }

@@ -18,6 +18,7 @@ public class LandscapeComponent : MonoBehaviour
     private int sectionSize;
     private Landscape landscape;
     private Material _material;
+    private Vector2[] uvs;
 
     // Start is called before the first frame update
 
@@ -33,7 +34,7 @@ public class LandscapeComponent : MonoBehaviour
             _material = new Material(Shader.Find("Landscape/RenderLandscape"));
     }
 
-    public void Init(Landscape inLandscape, IntPoint inKey, int inSectionSize, Vector3[] inVertices, Vector2[] inUVs)
+    public void Init(Landscape inLandscape, IntPoint inKey, int inSectionSize, Vector3[] inVertices, int[] inIndices)
     {
         GetMeshAndMaterial();
         landscape = inLandscape;
@@ -41,93 +42,36 @@ public class LandscapeComponent : MonoBehaviour
         posX = inKey.x;
         posZ = inKey.y;
         sectionSize = inSectionSize;
-        RecreateMesh(inVertices, inUVs);
+        RecreateMesh(inVertices, inIndices);
     }
 
-    void RecreateMesh(Vector3[] inVertices, Vector2[] inUVs)
+    void RecreateMesh(Vector3[] inVertices, int[] inIndices)
     {
         Mesh mesh = new Mesh();
         mesh.vertices = inVertices;
-        mesh.uv = inUVs;
         
-        //calculate index
-        int triangleNum = sectionSize *  sectionSize * 2;
-        int[] indices = new int[triangleNum * 3];
-
+        //calculate uvs
+        uvs = new Vector2[landscape.sectionResolution * landscape.sectionResolution];
         int startVertexX = key.x * (sectionSize + 1) - key.x;
         int startVertexY = key.y * (sectionSize + 1) - key.y;
-        
-        mesh.indexFormat = IndexFormat.UInt32;
-
         int index = 0;
-        for (int y = 0; y < sectionSize; y++)
+        for (int y = 0; y <= sectionSize; y++)
         {
-            for (int x = 0; x < sectionSize; x++)
+            for (int x = 0; x <= sectionSize; x++)
             {
                 int vertexX = startVertexX + x;
                 int vertexY = startVertexY + y;
-                
-                if ((vertexY % 2  + vertexX % 2) == 1)
-                {
-                    //LeftUp triangle(00-01-10)
-                    int index1 = vertexX + vertexY * landscape.realWidthResolution;
-                    indices[index] = index1;
-                    index++;
-                
-                    int index2 = vertexX + (vertexY + 1) * landscape.realWidthResolution;
-                    indices[index] = index2;
-                    index++;
-                
-                    int index3 = vertexX + 1 + vertexY * landscape.realWidthResolution;
-                    indices[index] = index3;
-                    index++;
-                
-                    //RightDown triangle(10-01-11)
-                    int index4 = vertexX + 1 + vertexY * landscape.realWidthResolution;
-                    indices[index] = index4;
-                    index++;
-                
-                    int index5 = vertexX + (vertexY + 1) * landscape.realWidthResolution;
-                    indices[index] = index5;
-                    index++;
-                
-                    int index6 = vertexX + 1 + (vertexY + 1) * landscape.realWidthResolution;
-                    indices[index] = index6;
-                    index++;
-                }
-                else
-                {
-                    //LeftDown triangle(00-01-11)
-                    int index1 = vertexX + vertexY * landscape.realWidthResolution;
-                    indices[index] = index1;
-                    index++;
-                
-                    int index2 = vertexX + (vertexY + 1) * landscape.realWidthResolution;
-                    indices[index] = index2;
-                    index++;
-                
-                    int index3 = vertexX + 1 + (vertexY + 1) * landscape.realWidthResolution;
-                    indices[index] = index3;
-                    index++;
-                
-                    //RightDown triangle(00-11-10)
-                    int index4 = vertexX + vertexY * landscape.realWidthResolution;
-                    indices[index] = index4;
-                    index++;
-                
-                    int index5 = vertexX + 1 + (vertexY + 1) * landscape.realWidthResolution;
-                    indices[index] = index5;
-                    index++;
-                
-                    int index6 = vertexX + 1 + vertexY  * landscape.realWidthResolution;
-                    indices[index] = index6;
-                    index++;
-                }
+                index = x + y * landscape.sectionResolution;
+                uvs[index] = new Vector2((float)(vertexX) / (float)(landscape.realWidthResolution - 1),
+                    (float)(vertexY) / (float)(landscape.realWidthResolution - 1));
             }
         }
+
+        mesh.uv = uvs;
+        mesh.indexFormat = IndexFormat.UInt32;
         
         //TODO: material????
-        mesh.SetIndices(indices.ToList(), MeshTopology.Triangles, 0);
+        mesh.SetIndices(inIndices.ToList(), MeshTopology.Triangles, 0);
         mesh.RecalculateNormals();
         mesh.RecalculateTangents();
         mesh.RecalculateBounds();
